@@ -1,0 +1,33 @@
+---
+version: '3'
+services:
+  producer:
+    hostname: producer
+    container_name: producer
+    build:
+      context: semantic-search/
+      dockerfile: Dockerfile
+    environment:
+      CONFIG_TYPE: FILE
+      CONFIG_FILE: "/usr/app/client.properties"
+      METADATA_FILE: "/usr/app/data/video_game_products.json.gz"
+    volumes: 
+      - ./client.properties:/usr/app/client.properties
+      - ./data/:/usr/app/data/
+    command: java -cp /usr/app/semantic-search-1.0.0.jar com.github.zacharydhamilton.producer.MetadataProducer
+    depends_on:
+      - processor
+  processor:
+    hostname: processor
+    container_name: processor
+    build:
+      context: semantic-search/
+      dockerfile: Dockerfile
+    environment:
+      CONFIG_TYPE: FILE
+      CONFIG_FILE: "/usr/app/client.properties"
+      OPENAI_API_KEY: $OPENAI_API_KEY
+    volumes: 
+      - ./client.properties:/usr/app/client.properties
+    command: java -cp /usr/app/semantic-search-1.0.0.jar com.github.zacharydhamilton.processor.CreateEmbeddingProcessor
+    

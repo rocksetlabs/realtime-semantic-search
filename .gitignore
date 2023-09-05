@@ -1,0 +1,53 @@
+# Terraform
+**/.terraform*
+**/terraform.tfstate*
+
+# Properties/secrets files
+**/rockset.properties
+**/client.properties
+**/env.sh
+**/notes.file
+
+# Data
+meta_Video_Games.json.gz
+
+# Java
+# Compiled bytecode files
+*.class
+
+# Package files
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Logs and databases
+*.log
+*.sql
+*.sqlite
+
+# IDE-specific files (Eclipse, IntelliJ, NetBeans)
+.classpath
+.project
+.settings/
+.idea/
+*.iml
+
+# OS-specific files (Mac, Windows)
+.DS_Store
+Thumbs.db
+
+# Maven target directory
+**/target/
+
+# Other common ignores
+*.swp
+*.bak
+*.off
+*.old
+.tmp*
+
+# Dependency Pom
+dependency-reduced-pom.xml
