@@ -10,11 +10,10 @@ services:
     environment:
       CONFIG_TYPE: FILE
       CONFIG_FILE: "/usr/app/client.properties"
-      METADATA_FILE: "/usr/app/data/video_game_products.json.gz"
     volumes: 
       - ./client.properties:/usr/app/client.properties
       - ./data/:/usr/app/data/
-    command: java -cp /usr/app/semantic-search-1.0.0.jar com.github.zacharydhamilton.producer.MetadataProducer
+    command: java -cp /usr/app/semantic-search-1.0.0.jar com.github.zacharydhamilton.producer.MetadataProducer topic=products.metadata clientId=metadata-producer metadataFile=/usr/app/data/video_game_products.json.gz
     depends_on:
       - processor
   processor:
@@ -30,4 +29,18 @@ services:
     volumes: 
       - ./client.properties:/usr/app/client.properties
     command: java -cp /usr/app/semantic-search-1.0.0.jar com.github.zacharydhamilton.processor.CreateEmbeddingProcessor
-    
+  updater:
+    hostname: updater
+    container_name: updater
+    build:
+      context: semantic-search/
+      dockerfile: Dockerfile
+    environment:
+      CONFIG_TYPE: FILE
+      CONFIG_FILE: "/usr/app/client.properties"
+    volumes: 
+      - ./client.properties:/usr/app/client.properties
+      - ./data/:/usr/app/data/
+    command: sh -c "while true; do sleep 1; done"
+    depends_on:
+      - processor

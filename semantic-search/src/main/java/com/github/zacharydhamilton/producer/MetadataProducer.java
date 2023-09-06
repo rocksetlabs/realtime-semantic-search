@@ -22,21 +22,22 @@ import com.google.gson.JsonObject;
 public class MetadataProducer {
     static String configType = (System.getenv("CONFIG_TYPE") != null) ? System.getenv("CONFIG_TYPE") : "FILE"; 
     static String configFile = (System.getenv("CONFIG_FILE") != null) ? System.getenv("CONFIG_FILE") : "../client.properties";
-    static String dataFile = (System.getenv("METADATA_FILE") != null) ? System.getenv("METADATA_FILE") : "../data/video_game_products.json.gz";
-    static String topic = "products.metadata";
-    static String clientId = "metadata-producer";
 
     public static void main(String[] args) throws IOException {
-        ArrayList<JsonObject> metadata = GzipReader.readJson(dataFile);
-        KafkaProducer<String, String> producer = createProducer();
+        Properties argProps = parseArgs(args);
+        String topic = argProps.getProperty("topic");
+        String metadataFile = argProps.getProperty("metadataFile");
+        ArrayList<JsonObject> metadata = GzipReader.readJson(metadataFile);
+        KafkaProducer<String, String> producer = createProducer(argProps);
         for (JsonObject json : metadata) {
             ProducerRecord<String, String> record = new ProducerRecord<String,String>(topic, json.get("asin").toString(), json.toString());
             producer.send(record);
         }
         producer.flush();
+        producer.close();
     }
 
-    public static KafkaProducer<String, String> createProducer() throws IOException {
+    public static KafkaProducer<String, String> createProducer(Properties argProps) throws IOException {
         Properties props = new Properties();
         if (configType.equals("FILE")) {
             addPropsFromFile(props, configFile);
@@ -49,11 +50,24 @@ public class MetadataProducer {
         }
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-        props.put(ProducerConfig.CLIENT_ID_CONFIG, clientId);
+        props.put(ProducerConfig.CLIENT_ID_CONFIG, argProps.getProperty("clientId"));
         props.put(ProducerConfig.ACKS_CONFIG, "all");
         props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
         props.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, 5); 
         return new KafkaProducer<String, String>(props);
+    }
+
+    private static Properties parseArgs(String[] args) throws ConfigException {
+        ArrayList<String> requiredProps = new ArrayList<String>(Arrays.asList("topic", "clientId", "metadataFile"));
+        Properties props = new Properties();
+        for (String arg : args) {
+            String[] prop = arg.split("=");
+            props.put(prop[0], prop[1]);
+        }
+        if (props.size() < requiredProps.size() || props.size() > requiredProps.size()) {
+            throw new ConfigException(String.format("Expected exactly %s arguments (%s), %s provided (%s)", requiredProps.size(), requiredProps.toString(), props.size(), props.keySet().toString()));
+        }
+        return props;
     }
 
     /**

@@ -22,6 +22,7 @@ import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.util.ConfigurationException;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.SaslConfigs;
@@ -61,27 +62,21 @@ public class CreateEmbeddingProcessor {
         }
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws ConfigurationException, Exception {
+        if (System.getenv("OPENAI_API_KEY") == null) throw new ConfigurationException("Missing required property 'OPENAI_API_KEY'. Set an env variable with this name with the value of an OpenAI API Key");
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setRuntimeMode(RuntimeExecutionMode.STREAMING);
-
         KafkaSource<String> source = createKafkaSource();
-
         DataStream<String> stream = env.fromSource(source, WatermarkStrategy.noWatermarks(), "kafkaSource");
-
         DataStream<String> transformed = stream.map(new CreateEmbedding());
-
         DataStream<String> filtered = transformed.filter(new FilterFunction<String>() {
             @Override
             public boolean filter(String value) {
                 return value != null;
             }
         });
-
         KafkaSink<String> sink = createKafkaSink();
-
         filtered.sinkTo(sink);
-
         env.execute("create-embeddings");
     }
 
