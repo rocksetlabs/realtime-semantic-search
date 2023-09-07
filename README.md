@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="images/confluent-rockset.png" width="50%" height="50%">
+    <img src="images/confluent-rockset.png" width="75%" height="75%">
 </div>
 
 # <div align="center">Real-time Semantic Search</div>
