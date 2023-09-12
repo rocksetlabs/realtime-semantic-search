@@ -4,7 +4,9 @@
 
 # <div align="center">Real-time Semantic Search</div>
 
-Introduction
+In this exercise we will demonstrate how to use event streaming and vector search to support real-time semantic 
+search by combining two fully managed cloud services, Confluent Cloud and Rockset. Event streaming allows 
+loosely coupled but highly integrated systems and applications to built and operate at the speed of business. In this particular exercise we use Confluent Cloud to store our events and Apache Flink to enrich them with embeddings from OpenAI. Our semantic search engine is powered by Rockset's [vector search capabilities](https://docs.rockset.com/documentation/docs/what-is-vector-search). 
 
 ## Prerequisites
 
@@ -15,7 +17,9 @@ Introduction
 * An OpenAI Account with credentials (in order to generate the text embeddings)
 
 **Rockset**
-* Rockset Account
+* Rockset Account and API key
+* Python (tested on 3.9.9 but 3.9+ should be fine)
+* [Rockset Python SDK (1.0.4)](https://github.com/rockset/rockset-python-client/tree/main)
 
 ## Confluent
 
@@ -29,7 +33,7 @@ git clone https://github.com/rocksetlabs/realtime-semantic-search && cd realtime
 echo "# Confluent Cloud\nexport CONFLUENT_CLOUD_API_KEY="key"\nexport CONFLUENT_CLOUD_API_SECRET="secret"\n# OpenAI API Key\nexport OPENAI_API_KEY="key"" > env.sh
 ```
 
-With the secrets file created, go to Confluent Cloud and create Cloud API Keys (guide [here](https://docs.confluent.io/cloud/current/access-management/authenticate/api-keys/api-keys.html#cloud-cloud-api-keys)) and paste the values into the secrets file for the key and secret respectively. Next, paste in the value for your OpenAI API Key as well so the Flink processor will be able to create enbeddings. With all that complete, source everything to the console so the applications can use them. 
+With the secrets file created, go to Confluent Cloud and create Cloud API Keys (guide [here](https://docs.confluent.io/cloud/current/access-management/authenticate/api-keys/api-keys.html#cloud-cloud-api-keys)) and paste the values into the secrets file for the key and secret respectively. Next, paste in the value for your OpenAI API Key as well so the Flink processor will be able to create embeddings. With all that complete, source everything to the console so the applications can use them. 
 
 ```bash
 source env.sh
@@ -69,7 +73,7 @@ With the images built, start the Flink processor so that it will be up and ready
 docker compose up processor -d
 ```
 
-Give the service a moment to come online (nothing more than 60 seconds), then launh the producer.
+Give the service a moment to come online (nothing more than 60 seconds), then launch the producer.
 
 ```bash
 docker compose up producer -d
@@ -100,7 +104,47 @@ docker compose exec updater java -cp /usr/app/semantic-search-1.0.0.jar com.gith
 You can cycle between these as many times as you like. Each will produce a single event to Confluent, and Rockset will store only the latest value you produced. 
 
 
-## Rcokset
+## Rockset
+
+For the Rockset portion we used Python to set up everything and test our queries. You may need to change the region defined in the script if it is not usw2a1.
+
+```python
+region = Regions.usw2a1
+```
+
+Once your data is flowing into the topic `product.embeddings`, you can set the following environment variables 
+and run the setup script. This will create your integration with Confluent Cloud, create your Rockset collection and query lambdas.
+
+```bash
+export CC_APIKEY=<your Confluent Cloud api key>
+export CC_SECRET=<your Confluent Cloud secret>
+export CC_BOOTSTRAP_SERVERS=<your Confluent Cloud bootstrap server>
+export ROCKSET_APIKEY=<your Rockset API Key>
+
+python rockset_setup.py
+```
+
+In a couple of minutes your collection should be ready and populated. You can check the collection status and 
+document count in the console. If you used the data from this repo there should be 10,874 documents.
+
+Now we can set our OpenAI org and api key.
+```bash
+export OPENAI_ORG=<your OpenAI org>
+export OPENAI_API_KEY<your OpenAI API key>
+```
+
+If you didn't already set your Rockset API key in the previous step you should do that as well.
+```bash
+export ROCKSET_APIKEY=<your Rockset API Key>
+```
+
+With everything set we can run the search script.
+```bash
+python webinar_vector_search.py
+```
+
+You will be prompted to enter the input variables and then see the results. Feel free to try different 
+inputs and compare the differences between vector search and full text search.
 
 ## Clean-up
 
@@ -109,3 +153,5 @@ You can cycle between these as many times as you like. Each will produce a singl
 * Make sure you navigate back to the `terraform/` directory and destroy the components in Confluent Cloud. `terraform destroy`
 
 **Rockset**
+* If you changed VI size for testing, make sure to scale down.
+* You can delete your query lambdas, collection and integration when you are done in the console.
