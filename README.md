@@ -23,17 +23,34 @@ loosely coupled but highly integrated systems and applications to built and oper
 
 ## Confluent
 
-Since you'll need some secrets through this walkthrough, the first thing you should do is create a file for your secrets. This repo will ignore the file `env.sh`, so using that is a safe bet. Start by cloning the repo, then creating the file with the following command. 
+Since you'll need some secrets through this walkthrough, the first thing you should do is create a file for your secrets. This repo will ignore the file `env.sh`, so using that is a safe bet. Start by cloning the repo, then creating the file with the following steps. 
 
-```bash 
-git clone https://github.com/rocksetlabs/realtime-semantic-search && cd realtime-semantic-search
-```
+1. Clone the repo and enter the new directory. 
+    ```bash 
+    git clone https://github.com/rocksetlabs/realtime-semantic-search && cd realtime-semantic-search
+    ```
 
-```bash
-echo "# Confluent Cloud\nexport CONFLUENT_CLOUD_API_KEY="key"\nexport CONFLUENT_CLOUD_API_SECRET="secret"\n# OpenAI API Key\nexport OPENAI_API_KEY="key"" > env.sh
-```
+1. Make a file named `env.sh` to stop all your secrets. 
+    ```bash
+    touch env.sh
+    ```
 
-With the secrets file created, go to Confluent Cloud and create Cloud API Keys (guide [here](https://docs.confluent.io/cloud/current/access-management/authenticate/api-keys/api-keys.html#cloud-cloud-api-keys)) and paste the values into the secrets file for the key and secret respectively. Next, paste in the value for your OpenAI API Key as well so the Flink processor will be able to create embeddings. With all that complete, source everything to the console so the applications can use them. 
+1. Copy the following into the new `env.sh` file with the approach of your choice, and then save it. 
+    ```bash
+    # Confluent Cloud
+    export CONFLUENT_CLOUD_API_KEY="key"
+    export CONFLUENT_CLOUD_API_SECRET="secret"
+    export CONFLUENT_CLOUD_BOOTSTRAP_SERVERS="bootstrap"
+
+    # Rockset
+    export ROCKSET_API_KEY="key"
+
+    # OpenAI API Key
+    export OPENAI_ORG="name"
+    export OPENAI_API_KEY="key"
+    ```
+
+With the secrets file created, go to Confluent Cloud and create Cloud API Keys (guide [here](https://docs.confluent.io/cloud/current/access-management/authenticate/api-keys/api-keys.html#cloud-cloud-api-keys)) and paste the values into the secrets file for the key and secret respectively. Next, paste in the value for your OpenAI API Key as well so the Flink processor will be able to create embeddings. With all that complete, source everything to the console so the applications can use them. You'll add the other secrets later.
 
 ```bash
 source env.sh
@@ -55,7 +72,11 @@ terraform plan
 terraform apply 
 ```
 
-Wait for Terraform to finish creating all the resources, then navigate back to the base directory. 
+Wait for Terraform to finish creating all the resources, then navigate to the Confluent Cloud console. In the console, you'll what to find your new cluster and environment, then look at the cluster settings/details in order to find the "bootstrap server". Once you have this information, copy it, and paste it into your secrets file, then source it to the console again before navigating back to the base directory.
+
+```bash
+source env.sh
+```
 
 ```bash
 cd ..
@@ -106,36 +127,39 @@ You can cycle between these as many times as you like. Each will produce a singl
 
 ## Rockset
 
-For the Rockset portion we used Python to set up everything and test our queries. You may need to change the region defined in the script if it is not usw2a1.
+Before you run any of the examples, make sure you add you Rockset API key to the secrets file. Once you've added your Rockset API key to the secrets file, source the variables to the console to make sure everything is available before continuing. 
+
+```bash
+source env.sh
+```
+
+Next, make sure you have all the dependencies necessary in order to run the Python scripts. Nagivate to the `rockset-python` directory and install the requirements. 
+
+```bash
+cd sematic-search/rockset-python
+```
+```bash
+pip install -r requirements.txt
+```
+
+For the Rockset portion you'll use Python to set up everything and test our queries. You may need to change the region defined in the script if it is not `usw2a1` in `rockset_setup.py`.
 
 ```python
 region = Regions.usw2a1
 ```
 
-Once your data is flowing into the topic `product.embeddings`, you can set the following environment variables 
-and run the setup script. This will create your integration with Confluent Cloud, create your Rockset collection and query lambdas.
+Once your data is flowing into the topic `product.embeddings`, you can run the following script. This will create your integration with Confluent Cloud, create your Rockset collection and query lambdas.
 
 ```bash
-export CC_APIKEY=<your Confluent Cloud api key>
-export CC_SECRET=<your Confluent Cloud secret>
-export CC_BOOTSTRAP_SERVERS=<your Confluent Cloud bootstrap server>
-export ROCKSET_APIKEY=<your Rockset API Key>
-
 python rockset_setup.py
 ```
 
-In a couple of minutes your collection should be ready and populated. You can check the collection status and 
-document count in the console. If you used the data from this repo there should be 10,874 documents.
+In a couple of minutes your collection should be ready and populated. You can check the collection status and document count in the console. If you used the data from this repo there should be ~10,874 documents.
 
-Now we can set our OpenAI org and api key.
-```bash
-export OPENAI_ORG=<your OpenAI org>
-export OPENAI_API_KEY<your OpenAI API key>
-```
+You should already have your OpenAI API key in your secrets file, so add you OpenAI Org to the secrets file as well, and then source it again.
 
-If you didn't already set your Rockset API key in the previous step you should do that as well.
 ```bash
-export ROCKSET_APIKEY=<your Rockset API Key>
+source env.sh
 ```
 
 With everything set we can run the search script.

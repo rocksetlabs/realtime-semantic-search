@@ -14,18 +14,18 @@ collection_name = "video_game_embeddings_test"
 workspace_name = "confluent_webinar"
 
 # Confluent Cloud api key and secret and bootstrap servers
-CC_APIKEY = os.getenv('CC_APIKEY')
-CC_SECRET = os.getenv('CC_SECRET')
-CC_BOOTSTRAP_SERVERS = os.getenv('CC_BOOTSTRAP_SERVERS')
+CC_API_KEY = os.getenv('CONFLUENT_CLOUD_API_KEY')
+CC_API_SECRET = os.getenv('CONFLUENT_CLOUD_API_SECRET')
+CC_BOOTSTRAP_SERVERS = os.getenv('CONFLUENT_CLOUD_BOOTSTRAP_SERVERS')
 
 # Rockset api key
-ROCKSET_APIKEY = os.getenv('ROCKSET_APIKEY')
+ROCKSET_API_KEY = os.getenv('ROCKSET_API_KEY')
 
 # make sure to set the correct Rockset region you are using
 region = Regions.usw2a1
 
 # Create an instance of the Rockset client
-rs = RocksetClient(api_key=ROCKSET_APIKEY, host=region)
+rs = RocksetClient(api_key=ROCKSET_API_KEY, host=region)
 
 # create our Confluent Cloud integration
 api_response = rs.Integrations.create_kafka_integration(
@@ -33,8 +33,8 @@ api_response = rs.Integrations.create_kafka_integration(
     kafka=KafkaIntegration(
         bootstrap_servers=CC_BOOTSTRAP_SERVERS,
         security_config=KafkaV3SecurityConfig(
-            api_key=CC_APIKEY,
-            secret=CC_SECRET,
+            api_key=CC_API_KEY,
+            secret=CC_API_SECRET,
         ),
         use_v3=True,
     ),

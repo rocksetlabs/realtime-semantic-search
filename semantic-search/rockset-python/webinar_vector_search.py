@@ -19,7 +19,7 @@ openai_org = os.getenv("OPENAI_ORG")
 openai_api_key = os.getenv("OPENAI_API_KEY")
 
 # and some Rockset globals
-ROCKSET_APIKEY = os.getenv('ROCKSET_APIKEY')
+ROCKSET_API_KEY = os.getenv('ROCKSET_API_KEY')
 region = Regions.usw2a1
 
 # function for getting user input, returns a dict of inputs
@@ -169,7 +169,7 @@ def main():
     print("What kind of video game are you looking for?")
     inputs = get_inputs()
     search_query_embedding = get_openai_embedding(inputs, openai_org, openai_api_key)
-    get_rs_results(inputs, region, ROCKSET_APIKEY, search_query_embedding)
+    get_rs_results(inputs, region, ROCKSET_API_KEY, search_query_embedding)
 
 if __name__ == "__main__":
     main()
